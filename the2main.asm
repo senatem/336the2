@@ -17,12 +17,16 @@ but3
    
 timehelper udata 0x34
 timehelper
+ 
+direction udata 0x35
+direction
+ 
     
 ORG    0x00            ; processor reset vector
     GOTO    INIT                  ; go to beginning of program
     
 ORG     0x08
-    GOTO    ISR             ;go to interrupt service routine
+    GOTO    ISRMAIN             ;go to interrupt service routine
     
 INIT
     CLRF TRISA
@@ -33,8 +37,8 @@ INIT
     CLRF TRISF
     MOVLW 0x0F
     MOVWF TRISG
-    ;CLRF TRISH
-    ;CLRF TRISJ
+    CLRF TRISH
+    CLRF TRISJ
     MOVWF ADCON1
     MOVLW 0x1C
     MOVWF PORTA
@@ -59,13 +63,20 @@ INIT
     movwf   T0CON ; T0CON = b'01000111'
     
     ;Initialize Timer1
+    CLRF T1CON
+    CLRF PIE1
+    CLRF IPR1
+    CLRF PIR1
+    MOVLW 0x8F
+    MOVWF TMR1L
     
-
     ;Enable interrupts
-    movlw   b'11100000' ;Enable Global, peripheral, Timer0 and RB interrupts by setting GIE, PEIE, TMR0IE and RBIE bits to 1
+    movlw   b'11100000' ;Enable Global, peripheral, Timer0 interrupts by setting GIE, PEIE, TMR0IE and bits to 1
     movwf   INTCON
 
     bsf     T0CON, 7    ;Enable Timer0 by setting TMR0ON to 1
+    bsf T1CON,0
+    bsf PIE1,0
 
 MAIN
     CALL BUTTON0
@@ -91,7 +102,6 @@ BUTTON0
 	BTFSS but0,0
 	BSF but0,0
 	return
-  
 
 BUTTON1
     ; Button Task for RG1
@@ -137,22 +147,33 @@ BUTTON3
 	return
 	BTFSC PORTA,0
 	return
-	RRNCF PORTA;move left paddle up
+	RRNCF PORTA ;move left paddle up
 	BCF but3,0
 	return
     _ison3:
 	BTFSS but3,0
 	BSF but3,0
 	return
-ISR
-    bcf     INTCON, 2 
-    CLRF TMR0L ; Reset Timer
+ISRMAIN
+    btfss   INTCON, 2       
+    goto    ISR1
+    goto    ISR0
+ISR0
+    bcf     INTCON, 2
     INCF timehelper
+    MOVFF TMR1L,direction
     MOVLW 0x2E
     CPFSEQ timehelper
     RETFIE
     ; Move Ball
     ; Check Score
+    CLRF timehelper
+    RETFIE
+    
+ISR1
+    bcf PIR1,0
+    MOVLW 0x8F
+    MOVWF TMR1L
     RETFIE
     
     
