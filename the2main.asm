@@ -65,7 +65,9 @@ BUTTON0
     _isoff:
 	BTFSS but0,0
 	return
-	;move right paddle down
+	BTFSC PORTF,0
+	return
+	RLCF PORTF ;move right paddle down
 	BCF but0,0
     _ison:
 	BTFSS but0,0
@@ -81,7 +83,9 @@ BUTTON1
     _isoff:
 	BTFSS but1,0
 	return
-	;move right paddle up
+	BTFSC PORTF,5
+	return
+	RRCF PORTF ;move right paddle up
 	BCF but1,0
     _ison:
 	BTFSS but1,0
@@ -95,7 +99,9 @@ BUTTON2
     _isoff:
 	BTFSS but2,0
 	return
-	;move left paddle down
+	BTFSC PORTA,0
+	return
+	RLCF PORTA ;move left paddle down
 	BCF but2,0
     _ison:
 	BTFSS but2,0
@@ -109,7 +115,9 @@ BUTTON3
     _isoff:
 	BTFSS but3,0
 	return
-	;move left paddle up
+	BTFSC PORTA,5
+	return
+	RRCF PORTA;move left paddle up
 	BCF but3,0
     _ison:
 	BTFSS but3,0
