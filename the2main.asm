@@ -14,6 +14,9 @@ but2
    
 but3   udata 0x33
 but3
+   
+timehelper udata 0x34
+timehelper
     
 ORG    0x00            ; processor reset vector
     GOTO    INIT                  ; go to beginning of program
@@ -28,24 +31,21 @@ INIT
     CLRF TRISD
     CLRF TRISE
     CLRF TRISF
-    CLRF TRISH
-    CLRF TRISJ
-    CLRF PORTF
-    CLRF PORTG
     MOVLW 0x0F
     MOVWF TRISG
+    ;CLRF TRISH
+    ;CLRF TRISJ
     MOVWF ADCON1
+    MOVLW 0x1C
+    MOVWF PORTA
     CLRF PORTB
     CLRF PORTC
     MOVLW 0x08
-    MOVWF PORTD    
+    MOVWF PORTD
+    CLRF PORTE
     MOVLW 0x1C
-    MOVWF PORTA
-    MOVWF PORTE
-    MOVLW 0x01
-    MOVWF PORTH
-    MOVLW 0x3F
-    MOVWF PORTJ
+    MOVWF PORTF
+    CLRF PORTG
     
     ;Disable interrupts
     clrf    INTCON
@@ -53,14 +53,13 @@ INIT
 
 
     ;Initialize Timer0
-    movlw   b'00000111' ;Disable Timer0 by setting TMR0ON to 0 (for now)
+    movlw   b'01000111' ;Disable Timer0 by setting TMR0ON to 0 (for now)
                         ;Configure Timer0 as an 8-bit timer/counter by setting T08BIT to 1
                         ;Timer0 increment from internal clock with a prescaler of 1:256.
     movwf   T0CON ; T0CON = b'01000111'
-    MOVLW 0xD2
-    MOVWF TMR0H
-    MOVLW 0x3A
-    MOVWF TMR0L
+    
+    ;Initialize Timer1
+    
 
     ;Enable interrupts
     movlw   b'11100000' ;Enable Global, peripheral, Timer0 and RB interrupts by setting GIE, PEIE, TMR0IE and RBIE bits to 1
@@ -83,10 +82,11 @@ BUTTON0
     _isoff0:
 	BTFSS but0,0
 	return
-	BTFSC PORTF,0
+	BTFSC PORTF,5
 	return
-	RLCF PORTF ;move right paddle down
+	RLNCF PORTF ;move right paddle down
 	BCF but0,0
+	return
     _ison0:
 	BTFSS but0,0
 	BSF but0,0
@@ -101,10 +101,11 @@ BUTTON1
     _isoff1:
 	BTFSS but1,0
 	return
-	BTFSC PORTF,5
+	BTFSC PORTF,0
 	return
-	RRCF PORTF ;move right paddle up
+	RRNCF PORTF ;move right paddle up
 	BCF but1,0
+	return
     _ison1:
 	BTFSS but1,0
 	BSF but1,0
@@ -117,10 +118,11 @@ BUTTON2
     _isoff2:
 	BTFSS but2,0
 	return
-	BTFSC PORTA,0
+	BTFSC PORTA,5
 	return
-	RLCF PORTA ;move left paddle down
+	RLNCF PORTA ;move left paddle down
 	BCF but2,0
+	return
     _ison2:
 	BTFSS but2,0
 	BSF but2,0
@@ -133,18 +135,22 @@ BUTTON3
     _isoff3:
 	BTFSS but3,0
 	return
-	BTFSC PORTA,5
+	BTFSC PORTA,0
 	return
-	RRCF PORTA;move left paddle up
+	RRNCF PORTA;move left paddle up
 	BCF but3,0
+	return
     _ison3:
 	BTFSS but3,0
 	BSF but3,0
 	return
 ISR
-    bcf     INTCON, 2
-    MOVLW 0x00
-    MOVWF TMR0L ; Reset Timer
+    bcf     INTCON, 2 
+    CLRF TMR0L ; Reset Timer
+    INCF timehelper
+    MOVLW 0x2E
+    CPFSEQ timehelper
+    RETFIE
     ; Move Ball
     ; Check Score
     RETFIE
