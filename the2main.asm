@@ -53,6 +53,9 @@ scoreA
  
 scoreB udata 0x41
 scoreB 
+
+t udata 0x42
+t
     
 ORG    0x00            ; processor reset vector
     GOTO    INIT                  ; go to beginning of program
@@ -92,8 +95,10 @@ INIT
     BSF PORTH,0
     MOVLW 0x3F
     MOVWF PORTJ
+    CALL DELAY
     BCF PORTH,0
     BSF PORTH,2
+    CALL DELAY
     BCF PORTH,2
     
     ;Disable interrupts
@@ -122,7 +127,14 @@ INIT
     bsf T1CON,0
     bsf PIE1,0
     BSF stateD,0
-
+    
+DELAY ;7-segment init delay
+    MOVLW 0x0F
+    MOVWF t
+    _loop:
+        DECFSZ t,F
+	GOTO _loop
+    RETURN
 MAIN
     CALL BUTTON0
     CALL BUTTON1
@@ -237,7 +249,7 @@ ISR0
     CLRF stateA
     BSF stateB,0
     BSF direction,0  ;change the direction so it will choose path_right for next interrupt
-    RETFIE
+    GOTO _update7segment
     ;--------------  
     score_for_B:
     INCF scoreB
@@ -253,7 +265,7 @@ ISR0
     MOVWF PORTF
     BSF PORTD,3
     BSF stateD,0
-    RETFIE
+    GOTO _update7segment
    
     B_equal_five:
     MOVLW b'00011100'
@@ -286,7 +298,7 @@ ISR0
     CLRF PORTB
     CLRF stateB
     BSF stateA,0
-    RETFIE
+    GOTO _update7segment
 
 
     onC:
@@ -309,7 +321,7 @@ ISR0
     CLRF PORTC
     CLRF stateC
     BSF stateB,0
-    RETFIE
+    GOTO _update7segment
     
     onD:
     BTFSS stateD,0
@@ -331,7 +343,7 @@ ISR0
     CLRF PORTD
     CLRF stateD
     BSF stateC,0
-    RETFIE
+    GOTO _update7segment
 
     onE:
     BTFSS stateE,0
@@ -353,7 +365,7 @@ ISR0
     CLRF PORTE
     CLRF stateE
     BSF stateD,0
-    RETFIE
+    GOTO _update7segment
     
 path_right:
     
@@ -377,7 +389,7 @@ path_right:
     CLRF PORTB
     CLRF stateB
     BSF stateC,0
-    RETFIE
+    GOTO _update7segment
     
     onrC:
     BTFSS stateC,0
@@ -399,7 +411,7 @@ path_right:
     CLRF PORTC
     CLRF stateC
     BSF stateD,0
-    RETFIE
+    GOTO _update7segment
     
     onrD:
     BTFSS stateD,0
@@ -421,7 +433,7 @@ path_right:
     CLRF PORTD
     CLRF stateD
     BSF stateE,0
-    RETFIE
+    GOTO _update7segment
     
     onrE:
     BTFSS stateE,0
@@ -447,7 +459,7 @@ path_right:
     CLRF PORTE
     CLRF stateE
     BSF stateF,0
-    RETFIE
+    GOTO _update7segment
     
     onrF:
     BTFSS stateF,0
@@ -475,7 +487,7 @@ path_right:
     CLRF stateF
     BSF stateE,0
     BCF direction,0  ;change the direction so it will choose path_right for next interrupt
-    RETFIE
+    GOTO _update7segment
     
     score_for_A:
     BCF direction,0
@@ -492,7 +504,7 @@ path_right:
     MOVWF PORTF
     BSF PORTD,3
     BSF stateD,0
-    RETFIE
+    GOTO _update7segment
    
     A_equal_five:
     MOVLW b'00011100'
@@ -500,7 +512,7 @@ path_right:
     MOVWF PORTF
     BSF PORTD,3
     CLRF INTCON
-    RETFIE
+    GOTO _update7segment
     
     _update7segment:
 	MOVF scoreA,0
@@ -513,7 +525,6 @@ path_right:
 	MOVLW b'01101101'
 	BSF PORTH,0
 	MOVWF PORTJ
-	BCF PORTH,0
 	
 	MOVF scoreB,0
 	ADDWF   PCL, F  ; modify program counter
@@ -523,14 +534,16 @@ path_right:
 	MOVLW b'01001111'
 	MOVLW b'01100110'
 	MOVLW b'01101101'
-	BSF PORTH,0
+	BSF PORTH,2
 	MOVWF PORTJ
-	BCF PORTH,0
+	RETFIE
     
 ISR1
     bcf PIR1,0
     MOVLW 0x8F
     MOVWF TMR1L
+    BCF PORTH,0
+    BCF PORTH,2
     RETFIE
     
     GOTO $                          ; loop forever    
